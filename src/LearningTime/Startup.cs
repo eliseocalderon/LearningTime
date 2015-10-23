@@ -9,13 +9,18 @@ using LearningTime.Services;
 using Microsoft.AspNet.Hosting;
 using Microsoft.Framework.Configuration;
 using Microsoft.Dnx.Runtime;
+using LearningTime.Models;
+using Microsoft.Framework.Logging;
+using Newtonsoft.Json.Serialization;
+using AutoMapper;
+using LearningTime.ViewModels;
 
 namespace LearningTime
 {
     public class Startup
     {
-        public static IConfigurationRoot Configuration;
-        public static IHostingEnvironment Env;
+        public static IConfigurationRoot Configuration { get; set; }
+        public static IHostingEnvironment Env { get; set; }
 
         public Startup(IApplicationEnvironment appEnv, IHostingEnvironment env)
         {
@@ -32,18 +37,39 @@ namespace LearningTime
         // For more information on how to configure your application, visit http://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMvc();
-
+            services.AddMvc()
+                .AddJsonOptions(opt =>
+                {
+                    opt.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+                });
+            services.AddLogging();
+            services.AddEntityFramework()
+                .AddSqlServer()
+                .AddDbContext<LearningContext>();
+            services.AddScoped<CoordService>();
+            services.AddTransient<LearningContextSeedData>();
+            services.AddScoped<ILearningRepository, LearningRepository>();
             if (Env.IsDevelopment())
             {
                 services.AddScoped<IMailService, DebugMailService>();
             }
         }
 
-        public void Configure(IApplicationBuilder app)
+        public void Configure(IApplicationBuilder app, LearningContextSeedData seeder, ILoggerFactory loggerFactory)
         {
             // Add the platform handler to the request pipeline.
             app.UseIISPlatformHandler();
+
+            loggerFactory.AddDebug(LogLevel.Warning);
+
+            app.UseStaticFiles();
+
+            Mapper.Initialize(config =>
+            {
+                config.CreateMap<Trip, TripViewModel>().ReverseMap();
+                config.CreateMap<Stop, StopViewModel>().ReverseMap();
+            });
+
             //app.UseMvcWithDefaultRoute();
             app.UseMvc(config =>
             {
@@ -57,12 +83,8 @@ namespace LearningTime
                     }
                     );
             });
-            app.UseStaticFiles();
 
-            //app.Run(async (context) =>
-            //{
-            //    await context.Response.WriteAsync("Hello World!");
-            //});
+            seeder.EnsureSeeData();
         }
     }
 }

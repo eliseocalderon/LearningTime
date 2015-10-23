@@ -1,5 +1,9 @@
 {
   "AppSettings": {
-    "SiteEmailAddress": "me@aol.com"
+    "SiteEmailAddress": "me@aol.com",
+    "BingKey": "AlUGXpVbLoGlenbIKk8Qk1ss9V4bi9MiWgJa9KqoSPSUlQL9CwV2dByvfI71DH3R"
+  },
+  "Data": {
+    "LearningContextConnection": "Server=(localdb)\\ProjectsV12;Database=LearningDB;Trusted_Connection=true;MultipleActiveResultSets=true;"
   }
 }
